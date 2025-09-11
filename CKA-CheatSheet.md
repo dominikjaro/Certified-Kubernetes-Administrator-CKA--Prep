@@ -217,3 +217,144 @@ kubectl get pods --all-namespaces --watch
 ```
 
 ---
+
+## ⌂ Useful `kubectl` Commands
+
+![Cluster_Upgrade_process-Control_Plane](Cluster_Upgrade_process-Control_Plane.png)
+
+```bash
+#Create resources
+kubectl apply/create
+
+#Start a pod from an image
+kubectl run
+
+#Show documentation for API resources
+kubectl explain
+
+#Explain an individual resource in details
+kubectl explain pod | more
+kubectl explain pod.spec | more
+kubectl explain pod.spec.containers | more
+kubectl explain pod --recursive | more
+
+#Delete
+kubectl delete
+
+#List
+kubectl get
+
+#List everything that is running in all namespaces and pipe more so can see by page
+#like services, daemonsets, deployments and replicasets
+kubectl get all -all-namespaces | more
+
+#List everything -- all the resources that Kubernete knows about
+# See the shortcuts for the objects
+kubectl api-resources | more
+
+#Detailed resource information
+kubectl describe
+
+#Describe the details of the Node
+kubectl describe nodes c1-cp1 | more
+
+#Execute a command on a container
+kubectl exec
+
+#View logs on a container
+kubectl logs
+
+###
+#Modify kubectl`s output format
+--output=
+#ouput additional info
+-wide 
+
+#YAML formatted API object
+-yaml
+
+#JSON formatted API object
+-json
+
+#print an object without sending it to the API server
+-dry-run
+
+#Use -h or --help to find help
+kubectl -h | more
+kubectl create -h | more
+
+#bash-autocomplete of our kubectl commands
+sudo apt-get install -y bash-completion
+echo "source <(kubectl completion bash)" >> ~/.bashrc
+source ~/.bashrc
+
+
+#When containerd is your container runtime, use crictl to get a listing of the containers running
+sudo crictl --runtime-endpoint unix:///run/containerd/containerd.sock ps
+
+#Starting a process inside a container inside a pod
+#We can use this to launch any process as long as the executable/binary is in the container
+#This is on the *pod* network
+kubectl exec -it [POD_NAME] -- /bin/sh
+
+
+#Expose the Deployment as a Service. This will create a Service for the Deployment
+#We are exposing our Service on port 80, connecting to an application running on 8080 in our pod
+#Port: Internal Cluster Port, the Service's port. You will point cluster resources here.
+# TargetPort: The Pod's ServicePort, your application. That one we defined when we started the pods.
+kubectl expose deployment hello-world --port=80 --target-port=8080
+
+
+#Access a single pod's application directly, useful for troubleshooting
+kubectl get endpoints [POD]
+
+
+#Deleting the deployment will delete the replicaset and then the pods
+kubectl get all
+kubectl delete ...
+```
+
+---
+
+## Cluster Upgrade Process - Control Plane
+
+```bash
+sudo apt-mark unhold kubeadm
+sudo apt-get update
+sudo apt-cache policy kubeadm  #get the available package version
+
+TARGET_VERSION='xyz'
+
+#Find out what versions are we on?
+kubeadm version
+kubectl version
+kubectl get nodes
+
+#First upgrade kubeadm on the Control Plane Node
+sudo apt-get install -y kubeadm=$TARGET_VERSION
+sudo apt-mark hold kubeadm
+
+#Run upgrade plan to test the process and the pre-flight checks 
+#Highlights additional work needed after the upgrade
+#Displays version information
+sudo kubeadm upgrade plan 'xyz'
+sudo kubeadm apply 'vxyz'
+#OR use sudo kubeadm upgrade node
+
+#Next, drain any workload on the Control Plane Node
+kubectl drain c1-cp1 --ignore-daemonsets   #this will remove any non-control plane pods from this node
+
+#Update the kubelet and kubectl as well
+sudo apt-mark unhold kubectl kubelet
+sudo apt-get update
+sudo apt-get install kubectl=$TARGET_VERSION kubelet=$TARGET_VERSION
+sudo apt-mark hold kubelet kubectl
+
+#Reload and restart the systemd unit
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+sudo systemctl status kubelet
+
+#Uncordon the node -- if we do this for c1-node1 we need to uncordon it from the Control Plane node c1-cp1
+kubectl uncordon c1-cp1
+```
