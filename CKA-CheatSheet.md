@@ -220,8 +220,6 @@ kubectl get pods --all-namespaces --watch
 
 ## ⌂ Useful `kubectl` Commands
 
-![Cluster_Upgrade_process-Control_Plane](Cluster_Upgrade_process-Control_Plane.png)
-
 ```bash
 #Create resources
 kubectl apply/create
@@ -318,6 +316,8 @@ kubectl delete ...
 
 ## Cluster Upgrade Process - Control Plane
 
+![Cluster_Upgrade_process-Control_Plane](Cluster_Upgrade_process-Control_Plane.png)
+
 ```bash
 sudo apt-mark unhold kubeadm
 sudo apt-get update
@@ -357,4 +357,84 @@ sudo systemctl status kubelet
 
 #Uncordon the node -- if we do this for c1-node1 we need to uncordon it from the Control Plane node c1-cp1
 kubectl uncordon c1-cp1
+```
+
+---
+
+## Cluster Upgrade Process - Worker Node
+
+![Cluster_Upgrade_Process-Worker_Nodes](Cluster_Upgrade_Process-Worker_Nodes.png)
+
+```bash
+# Drain the node that we want to upgrade
+kubectl drain c1-node1 --ignore-daemonsets
+
+#Then log onto the node that we want to upgrade and run...
+sudo apt-mark unhold kubeadm
+sudo apt-get update
+sudo apt-cache policy kubeadm  #get the available package version
+sudo apt-get install -y kubeadm=$TARGET_VERSION
+sudo apt-mark hold kubeadm
+
+#Once the kubeadm software is up to date we need to update the node
+sudo kubeadm upgrade node 
+
+#Once this is done we need to update the kubelet and kubectl packages on the node
+sudo apt-makr unhold kubelet kubectl
+sudo apt-get update 
+sudo apt-get install -y kubelet=$TARGET_VERSION kubectl=$TARGET_VERSION
+sudo apt-mark hold kubelet kubectl
+
+#Once this is done we need to log out of the node and uncordon it so pods can be scheduled on it
+kubectl uncordon c1-node1
+```
+
+---
+
+## Maintaining, Monitoring and Troubleshooting
+
+```bash
+### Backup your Kubernetes cluster
+
+#Find  out the etcd version we are running by using etcd --version inside the etcd pod.
+kubectl exec -it etcd-c1-master1 -n kube-system -- /bin/sh -c 'ETCDCTL_API=3 /usr/local/bin/etcd --version' | head
+
+#After we downloaded - we can do a quick check to see if we have etcdlctl...
+ETCDCTL_API=3 etcdctl --help | head
+
+```
+
+---
+
+## Logging - accessing Logs and Events
+
+```bash
+# on a Node
+# Get key information and status about the kubelet
+systemctl status kubelet.service
+
+#If we want to examine it's log further, we use journalctl to access it's log from journald -u
+# for which systemd unit. If using a pager, use f and b to for forward and back
+journalctl -u kubelet.service
+
+#Time bound your searches
+journalctl -u kubelet.service --since today --no-pager
+
+
+#If Docker or containerd is not available
+#This also applies to user pods/containers.
+#These are json fomratted which is the docker logging driver default
+sudo ls /var/log/containers
+sudo tail /var/log/containers/kube-apiserver-c1-master1*
+
+# Events
+# Show Events for all objects in the cluster 
+kubectl get events
+
+#sort by ...
+kubectl get events --sort-by='.metadata.creationTimestamp'
+
+#We can filter the list of events using field selector
+kubectl get events --field-selector type=Warning
+kubectl get events --field-selector type=Warning,reason=Failed
 ```
