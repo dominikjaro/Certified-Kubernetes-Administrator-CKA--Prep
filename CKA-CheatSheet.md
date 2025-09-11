@@ -1,4 +1,4 @@
-## Using `kubeadm` to install a Basic Cluster
+## 🏁 Using `kubeadm` to install a Basic Cluster
 
 ```bash
 #0 - Install Packages
@@ -109,7 +109,9 @@ sudo more /etc/kubernetes/manifests/kube-apiserver.yaml
 ls /etc/kubernetes
 ```
 
-## Join Nodes to the Cluster `kubeadm join`
+---
+
+## ⛓️‍💥 Join Nodes to the Cluster `kubeadm join`
 
 ```bash
 #On the node disable swap, swapoff then edit your fstab removing any entry for swap partitions
@@ -213,3 +215,5 @@ kubectl get nodes
 #Watch for the calico and the kube-proxy to change to Running on the newly added nodes
 kubectl get pods --all-namespaces --watch
 ```
+
+---
