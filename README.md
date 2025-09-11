@@ -11,7 +11,7 @@ My goal is to pass the CKA exam by **January 2026**.
   - [DoIt GKE Workshop](https://github.com/doitintl/gke-fundamentals-workshop)
   - Own ideas and scenarios.
 
-## The main domains covered:
+## ⩤ The main domains covered:
 
 - Cluster Architecture, Installation & Configuration
 - Workloads & Scheduling
