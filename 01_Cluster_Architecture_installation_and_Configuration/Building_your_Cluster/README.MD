@@ -106,3 +106,43 @@ sudo mkdir -p /etc/containerd
 sudo containerd config default | sudo tee /etc/containerd/config.toml
 ```
 
+You need to load the `SystemdCgroup` driver by enabling it in the config file. In the `/etc/containerd/config.toml` file, find the `SystemdCgroup` setting and set it to `true`.
+
+Then restart `containerd` to apply the changes.
+
+```bash
+sudo systemctl restart containerd
+```
+
+Add the Kubernetes apt repository and the GPG key.
+
+1. Purpose of a GPG Key: A GPG key is used to verify the authenticity and integrity of packages. It ensures that the packages you install come from a trusted source and have not been tampered with.
+2. `apt-transport-https`: is a package that allows the use of repositories accessed via the HTTP Secure protocol (HTTPS). This is important for securely downloading packages and updates from remote repositories.
+3. `ca-certificates`: is a package that contains the common CA (Certificate Authority) certificates used to verify the authenticity of SSL/TLS connections. It is essential for establishing secure connections to HTTPS repositories.
+4. `gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg`: This command converts the ASCII-armored GPG key into a binary format and saves it to the specified location. This is necessary for apt to use the key for package verification.
+5. `echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list`: This command adds the Kubernetes apt repository to the system's package sources, allowing you to install Kubernetes packages from this repository.
+
+```bash
+sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+```
+
+Install `kubelet`, `kubeadm` and `kubectl`...
+
+```bash
+VERSION=1.33.1-1.1
+sudo apt-get install -y kubelet=$VERSION kubeadm=$VERSION kubectl=$VERSION
+sudo apt-mark hold kubelet kubeadm kubectl
+```
+
+Check the `systemd` units e.g. `kubelet` and `containerd` are enabled and running.
+
+```bash
+sudo systemctl status kubelet.service
+sudo systemctl status containerd.service
+```
+
