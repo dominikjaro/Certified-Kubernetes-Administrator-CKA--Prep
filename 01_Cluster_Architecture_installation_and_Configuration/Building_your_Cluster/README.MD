@@ -146,3 +146,24 @@ sudo systemctl status kubelet.service
 sudo systemctl status containerd.service
 ```
 
+**Network Connectivity:**
+
+I used Calico for Pod networking. Calico is a popular open-source networking and network security solution for containers, virtual machines, and native host-based workloads. It is widely used in Kubernetes environments to provide networking capabilities for pods.
+
+Basically Calico answers these questions:
+1. How do pods on different nodes communicate with each other?
+2. How do pods get IP addresses?
+3. How is network security enforced between pods?
+4. Who is allowed to talk to whom?
+
+Calico network policy enforcement is done using `iptables` rules on each node. Calico translates high-level policies (e.g. "Pod A can only talk to Pod B on port 80") into low-level `iptables` rules.
+
+![calico.png](calico.png)
+
+```bash
+# On the control plane node only download the yaml files for the pod network 
+wget https://raw.githubusercontent.com/projectcalico/calico/master/manifests/calico.yaml
+
+#Changed the Pod Network IP address range CALICO_IPV4POOL_CIDR in the calico.yaml file to 10.0.0.0/16 
+# to ensure that the Pod network IP
+#range doesn't overlap with other networks in our infrastructure.
