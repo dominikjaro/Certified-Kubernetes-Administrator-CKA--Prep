@@ -33,13 +33,15 @@ Hostnames and IPs are set and host file on each node.
         +---------------------+
 ```
 
-## Prerequisites and Oracle Setup
+## Prerequisites
 
-**Oracle:**
+**VMs:**
 
 1. I created a Virtual Cloud Network with a public subnet in the London region. I added in Internet Gateway and the Default Route Table.
 2. Also, I needed a security List allowing SSH (22) and all traffic and Network Security Group allowing SSH (22) and all traffic.
 3. I created 2 VMs in the public subnet using the Ubuntu 24.04 image.
+
+**Memory:**
 
 ``` bash
 # Disabling `swap` ensures that the kubelet has a clear, real-time view of a node's memory resources, leading to more predictable performance and more reliable scheduling.
@@ -51,9 +53,12 @@ vi /etc/fstab
 free -h
 ```
 
+**Networking:**
+
 Configure the containerd prerequisite, and load two modules and configure them to load on boot.
 
 `overlay`: is a filesystem driver that allows different layers of a container image to be stacked on top of each other efficiently. This is how container runtimes like `containerd` manage images.
+
 `br_netfilter`: is required to enable communication between pods by allowing `iptables` rules to filter and route bridge network traffic. Without it your pods wouldn't be able to talk to each other. 
 
 ![overlay_and_br_netfilter.png](overlay_and_br_netfilter.png)
@@ -89,19 +94,18 @@ sudo sysctl --system
 
 ---
 
-**Install Packages:**
+## Install Kubernetes components
 
 1. containerd
 2. kubelet
 3. kubeadm
-4. kubectl
-
-Install `containerd`...
-`sudo apt-get update && sudo apt-get install -y containerd`
-
-Create the default configuration file for `containerd`... - to make sure container runtime functional out of the box. 
+4. kubectl 
 
 ```bash
+# Install containerd
+sudo apt-get update && sudo apt-get install -y containerd
+
+# Create the default configuration file for `containerd`... - to make sure container runtime functional out of the box
 sudo mkdir -p /etc/containerd
 sudo containerd config default | sudo tee /etc/containerd/config.toml
 ```
@@ -123,6 +127,11 @@ Add the Kubernetes apt repository and the GPG key.
 5. `echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list`: This command adds the Kubernetes apt repository to the system's package sources, allowing you to install Kubernetes packages from this repository.
 
 ```bash
+# First for the available version you can check the website or use the command below:
+apt-cache madison kubeadm
+apt-cache madison kubelet
+apt-cache madison kubectl
+
 sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
@@ -131,7 +140,7 @@ sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update
 ```
 
-Install `kubelet`, `kubeadm` and `kubectl`...
+### Install `kubelet`, `kubeadm` and `kubectl`
 
 ```bash
 VERSION=1.33.1-1.1
@@ -146,7 +155,7 @@ sudo systemctl status kubelet.service
 sudo systemctl status containerd.service
 ```
 
-**Network Connectivity:**
+## Network Connectivity
 
 I used Calico for Pod networking. Calico is a popular open-source networking and network security solution for containers, virtual machines, and native host-based workloads. It is widely used in Kubernetes environments to provide networking capabilities for pods.
 
@@ -165,5 +174,48 @@ Calico network policy enforcement is done using `iptables` rules on each node. C
 wget https://raw.githubusercontent.com/projectcalico/calico/master/manifests/calico.yaml
 
 #Changed the Pod Network IP address range CALICO_IPV4POOL_CIDR in the calico.yaml file to 10.0.0.0/16 
-# to ensure that the Pod network IP
-#range doesn't overlap with other networks in our infrastructure.
+# to ensure that the Pod network IP range doesn't overlap with other networks in our infrastructure.
+```
+
+## Initialize the Control Plane Node (bootstrap the cluster)
+
+On the control plane node only, run `kubeadm init` to initialize the cluster.
+
+```bash
+sudo kubeadm init --kubernetes-version=v1.33.0 --pod-network-cidr=10.0.0.0/16 #or your CIDR and version
+
+#Configure our account on the Control Plane node to have admin access to the API server from a non-privileged account.
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+**Creating a Pod Network**
+
+```bash
+#For the usefule kubectl commands, see the file kubectl_commands_cheatsheet.md
+
+kubectl apply -f calico.yaml
+kubectl get pods --all-namespaces
+```
+
+## Things to check on the Control Plane node
+
+```bash
+# Check the nodes
+kubectl get nodes
+
+# Check the systemd services - it should be active and running
+# The kubelet starts the static pods (etcd, kube-apiserver, kube-controller-manager, kube-scheduler) on the control plane node.
+sudo systemctl status kubelet
+
+# Check out the directory where the kubeconfig file is located
+ls -l /etc/kubernetes/
+
+# Check the status pod manifest files
+ls /etc/kubernetes/manifests
+
+# Check the API server and etcd manifest files
+cat /etc/kubernetes/manifests/kube-apiserver.yaml
+cat /etc/kubernetes/manifests/etcd.yaml
+
