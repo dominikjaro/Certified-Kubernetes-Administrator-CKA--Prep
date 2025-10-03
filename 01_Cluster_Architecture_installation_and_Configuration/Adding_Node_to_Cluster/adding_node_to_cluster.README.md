@@ -1,47 +1,12 @@
-## Building Your Cluster
+## Join your Node to the Cluster
 
-1. Install and configure packages required for Kubernetes (containerd, kubeadm, kubelet, kubectl)
-2. Create your cluster
-3. Configure Pod networking
-4. Join nodes to your cluster
+1. VM: Memory: `swap`
+2. Networking: `overlay` and `br_netfilter`
+3. `sysctl` params
+4. `containerd` configuration
+5. `kubeadm`, `kubelet` and `kubectl` installation
 
-`kubelet` is a thing that will drive the work on each node and in our cluster.
-`kubeadm` is respionsible for creating and managing the cluster up/running and configured. It also helps with upgrades and joining nodes.
-`kubectl` is the primary CLI tool to interact with your cluster.
-`containerd` pulls images from registries. Stores and organizes them on the server. It starts, stops and deletes containers.
-
-## Topology
-
-For this course, we will be using a simple topology with 1 control plane node and 2 worker nodes.
-We are using Ubuntu 22.04 VMs with 1 vCPU, 1GB RAM and 20GB disk each.
-Swap is disabled on all nodes. -- Swap space is a designated area on a HDD/SSD that an operating system uses as virtual memory. This can interfere with kubelet operations.
-Hostnames and IPs are set and host file on each node.
-```
-        +---------------------+
-        |   Control Plane      |
-        |   (kubeadm init).    |
-        |.  Hostname: c1-cp1   |
-        |   IP: 10.0.0.9      |
-        +---------------------+
-                   |
-                   |
-        +---------------------+
-        |     Worker Node 1   |
-        |   (kubeadm join)    |
-        |.   Hostname: c1-node1 |
-        |   IP: 10.0.0.10     | 
-        +---------------------+
-```
-
-## Prerequisites
-
-**VMs:**
-
-1. I created a Virtual Cloud Network with a public subnet in the London region. I added in Internet Gateway and the Default Route Table.
-2. Also, I needed a security List allowing SSH (22) and all traffic and Network Security Group allowing SSH (22) and all traffic.
-3. I created 2 VMs in the public subnet using the Ubuntu 24.04 image.
-
-**Memory:**
+**Memory on the worker Node**
 
 ``` bash
 # Disabling `swap` ensures that the kubelet has a clear, real-time view of a node's memory resources, leading to more predictable performance and more reliable scheduling.
@@ -61,7 +26,7 @@ Configure the containerd prerequisite, and load two modules and configure them t
 
 `br_netfilter`: is required to enable communication between pods by allowing `iptables` rules to filter and route bridge network traffic. Without it your pods wouldn't be able to talk to each other. 
 
-![overlay_and_br_netfilter.png](overlay_and_br_netfilter.png)
+![overlay_and_br_netfilter.png](/01_Cluster_Architecture_installation_and_Configuration/overlay_and_br_netfilter.png)
 
 ```bash
 # By creating the file and adding the kernel modules, we ensure that they load automatically on system boot, which is essential for the proper functioning of containerd and Kubernetes networking.
@@ -133,9 +98,9 @@ apt-cache madison kubelet
 apt-cache madison kubectl
 
 sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gpg
-sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update
 ```
@@ -154,68 +119,3 @@ Check the `systemd` units e.g. `kubelet` and `containerd` are enabled and runnin
 sudo systemctl status kubelet.service
 sudo systemctl status containerd.service
 ```
-
-## Network Connectivity
-
-I used Calico for Pod networking. Calico is a popular open-source networking and network security solution for containers, virtual machines, and native host-based workloads. It is widely used in Kubernetes environments to provide networking capabilities for pods.
-
-Basically Calico answers these questions:
-1. How do pods on different nodes communicate with each other?
-2. How do pods get IP addresses?
-3. How is network security enforced between pods?
-4. Who is allowed to talk to whom?
-
-Calico network policy enforcement is done using `iptables` rules on each node. Calico translates high-level policies (e.g. "Pod A can only talk to Pod B on port 80") into low-level `iptables` rules.
-
-![calico.png](calico.png)
-
-```bash
-# On the control plane node only download the yaml files for the pod network 
-wget https://raw.githubusercontent.com/projectcalico/calico/master/manifests/calico.yaml
-
-#Changed the Pod Network IP address range CALICO_IPV4POOL_CIDR in the calico.yaml file to 10.0.0.0/16 
-# to ensure that the Pod network IP range doesn't overlap with other networks in our infrastructure.
-```
-
-## Initialize the Control Plane Node (bootstrap the cluster)
-
-On the control plane node only, run `kubeadm init` to initialize the cluster.
-
-```bash
-sudo kubeadm init --kubernetes-version=v1.33.0 --pod-network-cidr=10.0.0.0/16 #or your CIDR and version
-
-#Configure our account on the Control Plane node to have admin access to the API server from a non-privileged account.
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-```
-
-**Creating a Pod Network**
-
-```bash
-#For the usefule kubectl commands, see the file kubectl_commands_cheatsheet.md
-
-kubectl apply -f calico.yaml
-kubectl get pods --all-namespaces
-```
-
-## Things to check on the Control Plane node
-
-```bash
-# Check the nodes
-kubectl get nodes
-
-# Check the systemd services - it should be active and running
-# The kubelet starts the static pods (etcd, kube-apiserver, kube-controller-manager, kube-scheduler) on the control plane node.
-sudo systemctl status kubelet
-
-# Check out the directory where the kubeconfig file is located
-ls -l /etc/kubernetes/
-
-# Check the status pod manifest files
-ls /etc/kubernetes/manifests
-
-# Check the API server and etcd manifest files
-cat /etc/kubernetes/manifests/kube-apiserver.yaml
-cat /etc/kubernetes/manifests/etcd.yaml
-

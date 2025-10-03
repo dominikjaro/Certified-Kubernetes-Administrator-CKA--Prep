@@ -60,3 +60,5 @@ This section of the CKA preparation covers the foundational elements of a Kubern
 * [`rbac.yaml`](rbac.yaml): Example YAML manifests for various RBAC scenarios (Roles, RoleBindings, ClusterRoles, ClusterRoleBindings).
 
 ---
+
+![cluster_architecture_installation_configuration_image](cluster_architecture_installation_configuration_image.png)
