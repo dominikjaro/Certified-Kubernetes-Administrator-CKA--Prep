@@ -1,4 +1,4 @@
-## Building Your Cluster
+# Building Your Cluster
 
 1. Install and configure packages required for Kubernetes (containerd, kubeadm, kubelet, kubectl)
 2. Create your cluster
@@ -128,9 +128,9 @@ Add the Kubernetes apt repository and the GPG key.
 
 ```bash
 # First for the available version you can check the website or use the command below:
-apt-cache madison kubeadm
-apt-cache madison kubelet
-apt-cache madison kubectl
+apt-cache policy kubeadm
+apt-cache policy kubelet
+apt-cache policy kubectl
 
 sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg

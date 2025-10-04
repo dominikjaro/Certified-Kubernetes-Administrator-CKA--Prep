@@ -1,10 +1,12 @@
-## Join your Node to the Cluster
+# Join your Node to the Cluster
 
 1. VM: Memory: `swap`
 2. Networking: `overlay` and `br_netfilter`
 3. `sysctl` params
 4. `containerd` configuration
-5. `kubeadm`, `kubelet` and `kubectl` installation
+5. GPG key and apt repository configuration
+6. `kubeadm`, `kubelet` and `kubectl` installation
+7. Generate the token and the join command on the control plane node
 
 **Memory on the worker Node**
 
@@ -40,7 +42,7 @@ sudo modprobe br_netfilter
 sudo modprobe overlay
 ```
 
-Need the `sysctl` params to enable networking routing for the Kubernetes cluster.
+Need the `sysctl` params to enable network routing for the Kubernetes cluster.
 
 `net.bridge.*`: commands needed to enable `iptables` rules to filter and route bridge network traffic. In a Kubernetes cluster, pods communicate over a virtual network bridge (e.g. cbr0). Wihtout these settings, `iptables` rules, which are used for Kubernetes network policies and service routing, would not function correctly.
 
@@ -93,9 +95,9 @@ Add the Kubernetes apt repository and the GPG key.
 
 ```bash
 # First for the available version you can check the website or use the command below:
-apt-cache madison kubeadm
-apt-cache madison kubelet
-apt-cache madison kubectl
+apt-cache policy kubeadm
+apt-cache policy kubelet
+apt-cache policy kubectl
 
 sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
@@ -118,4 +120,27 @@ Check the `systemd` units e.g. `kubelet` and `containerd` are enabled and runnin
 ```bash
 sudo systemctl status kubelet.service
 sudo systemctl status containerd.service
+```
+
+### Generate the join command and the token on the control plane node
+
+```bash
+# Log back into the control 
+#This will generate a new token and display the complete kubeadm join command that you will run on the worker node to join the cluster.
+kubeadm token create --print-join-command
+```
+
+### Things to check
+
+1. Check the `kubelet` service status on the worker node to ensure it is running properly.
+2. Check the nodes on the control plane node to see if the worker node has successfully joined the cluster.
+3. Check the certificate which should be stored on the worker node at `/var/lib/kubelet/pki/kubelet-client-current.pem`.
+4. Check for the kube config file which should be stored on the worker node at `/etc/kubernetes/kubelet.conf`.
+
+```bash
+# On the worker node
+sudo systemctl status kubelet.service
+
+# On the control plane node
+kubectl get nodes
 ```
