@@ -175,6 +175,8 @@ wget https://raw.githubusercontent.com/projectcalico/calico/master/manifests/cal
 
 #Changed the Pod Network IP address range CALICO_IPV4POOL_CIDR in the calico.yaml file to 10.0.0.0/16 
 # to ensure that the Pod network IP range doesn't overlap with other networks in our infrastructure.
+#-name: CALICO_IPV4POOL_CIDR
+# value: "10.0.0.0/16"
 ```
 
 ## Initialize the Control Plane Node (bootstrap the cluster)
