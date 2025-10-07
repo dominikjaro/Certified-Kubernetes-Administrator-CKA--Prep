@@ -129,6 +129,17 @@ sudo systemctl status containerd.service
 #This will generate a new token and display the complete kubeadm join command that you will run on the worker node to join the cluster.
 kubeadm token create --print-join-command
 ```
+### If you wanna use `kubectl` on the worker node
+
+You need to copy the `admin.conf` file from the control plane node to the worker node. This file contains the necessary configuration and credentials for `kubectl` to communicate with the Kubernetes cluster. Make sure you then add the correct permissions. 
+
+```bash
+# On the control plane node
+# Or if it doesn't have permissions just copy the content manually
+scp /etc/kubernetes/admin.conf user@worker-node:/etc/kubernetes/config
+
+sudo chown $(id -u):$(id -g) /etc/kubernetes/config
+```
 
 ### Things to check
 
