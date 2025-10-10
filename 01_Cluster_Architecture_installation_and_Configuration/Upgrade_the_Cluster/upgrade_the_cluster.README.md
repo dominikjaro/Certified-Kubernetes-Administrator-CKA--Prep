@@ -3,9 +3,18 @@
 <u>First you need to upgrade the control plane node, then the worker nodes.</u>
 ![cluster_upgrade_overview](cluster_upgrade_overview.png)
 
-## Upgrade the Control Plane Node
+## 1. Upgrade the Control Plane Node
 
 ![control_plane_node_upgrade](control_plane_node_upgrade.png)
+
+### Order:
+
+1. **Upgrade kubeadm** 	`sudo apt install kubeadm=<new-version>`	Updates the utility responsible for  the upgrade process.
+2. **Apply Upgrade**  `sudo kubeadm upgrade apply <new-version>`	Renews certificates and updates the static Pod manifests (API Server, Scheduler, etc.).
+3. **Drain Node**  `kubectl drain c1-cp1 --ignore-daemonsets`	Now drain the node to evict any non-control plane workloads before touching the kubelet.
+4. **Upgrade Binaries**  `sudo apt install kubelet=<new-version> kubectl=<new-version>`	Updates the local kubelet agent and the kubectl utility.
+5. **Restart Kubelet**  `sudo systemctl daemon-reload && sudo systemctl restart kubelet`	Restarts the agent to load the newly upgraded binary.
+6. **Uncordon Node**  `kubectl uncordon c1-cp1`	Marks the Control Plane as available for scheduling.
 
 **Upgrade kubeadm**
 
@@ -66,9 +75,16 @@ This will allow scheduling of workloads on the control plane node.
 
 ---
 
-## Upgrade the Worker Nodes
+## 2. Upgrade the Worker Nodes
 
 ![worker_node_upgrade](worker_node_upgrade.png)
+
+1. **Upgrade kubeadm**		`sudo apt install kubeadm=<new-version>`	Updates the utility responsible for the configuration changes.
+2. **Drain Node**		`kubectl drain c1-node1 --ignore-daemonsets`	First, safely evict all application Pods to prevent disruption.
+3. **Upgrade Config**		`sudo kubeadm upgrade node`	Downloads and applies the new Kubelet configuration from the cluster.
+4. **Upgrade Binaries**		`sudo apt install kubelet=<new-version> kubectl=<new-version>`	Updates the local kubelet agent and the kubectl utility.
+5. **Restart Kubelet**		`sudo systemctl daemon-reload && sudo systemctl restart kubelet`	Restarts the agent to load the upgraded binary and config.
+6. **Uncordon Node**		`kubectl uncordon c1-node1`	Marks the worker node as available for scheduling new workloads.
 
 **Drain the Worker Node**
 
@@ -107,3 +123,20 @@ sudo systemctl status kubelet
 This will allow scheduling of workloads on the worker node.
 
 `kubectl uncordon <worker-node-name>`
+
+---
+
+## Key Difference:
+
+**Control Plane:** You apply the upgrade first (kubeadm upgrade apply) because you need the cluster's brain to be upgraded before anything else.
+
+**Worker Node:** You drain the node first (kubectl drain) because your primary concern is minimizing application downtime.
+
+---
+
+## 3. Issues I faced
+
+- **CNI plugin (Calico)** interfering with the host's DNS resolution setup after the **drained** the worker node. 
+  - It caused issues with `kubeadm upgrade node` command as it couldn't resolve the API server's DNS name.
+  - **Solution**: I had to temporarily edit the `/etc/resolv.conf` file to use a public DNS server like `nameserver 8.8.8.8`.
+    - I upgraded the worker node successfully and the packages (kubelet, kubectl)then a reboot restored the original `/etc/resolv.conf` file.
