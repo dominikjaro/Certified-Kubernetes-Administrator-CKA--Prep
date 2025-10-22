@@ -1,0 +1,70 @@
+# Deployment manifest for a static web application with node affinity and pod anti-affinity rules
+# Node affinity is used to schedule pods on specific nodes based on labels, while pod anti-affinity
+# ensures that pods are not scheduled on the same node as other specified pods.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: static-web-app-deployment-affinity
+  namespace: doit-lab-03
+  labels:
+    k8s-app: static-web-app
+    k8s-scope: gke-ws-doit-lab-03
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      k8s-app: static-web-app
+  template:
+    metadata:
+      labels:
+        k8s-app: static-web-app
+        k8s-scope: gke-ws-doit-lab-03
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - mountPath: /usr/share/nginx/html/index.html
+            name: index-html
+            subPath: index.html
+      volumes:
+        - name: index-html
+          configMap:
+            name: static-web-app-index
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                 - key: topology.kubernetes.io/region
+                   operator: In
+                   values:
+                     - eu-north-1
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: topology.kubernetes.io/zone
+                    operator: In
+                    values:
+                      - eu-north-1a
+            - weight: 20
+              preference:
+                matchExpressions:
+                  - key: node.kubernetes.io/instance-type
+                    operator: In
+                    values:
+                      - t3.small
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: k8s-app
+                      operator: In
+                      values:
+                        - static-web-app
+                topologyKey: kubernetes.io/hostname
