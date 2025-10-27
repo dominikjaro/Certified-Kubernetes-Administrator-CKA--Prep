@@ -1,0 +1,22 @@
+###----------------------------------------
+# Static Web App Service of type NodePort
+###----------------------------------------
+# Exposes the static web app on port 8080 via NodePort 30000
+# Works in the namespace doit-lab-04 AND labels `static-web-app` must match those in the deployment
+# Tested and I could access the web app via any node's IP and port 30000 http://<node-external-ip>:30000
+apiVersion: v1
+kind: Service
+metadata:
+  name: static-web-app-service
+  namespace: doit-lab-04
+  labels:
+    k8s-app: static-web-app
+    k8s-scope: gke-ws-doit-lab-04
+spec:
+  type: NodePort
+  selector:
+    k8s-app: static-web-app
+  ports:
+    - port: 8080
+      targetPort: 80
+      nodePort: 30000
