@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: static-web-app-deployment
+  namespace: doit-lab-05
+  labels:
+    k8s-app: static-web-app
+    k8s-scope: gke-ws-doit-lab-05
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      k8s-app: static-web-app
+  template:
+    metadata:
+      labels:
+        k8s-app: static-web-app
+        k8s-scope: gke-ws-doit-lab-05
+    spec:
+      containers:
+        - name: static-web-app-c
+          image: nginx:alpine
+          ports:
+            - name: http-80
+              containerPort: 80
+              protocol: TCP
