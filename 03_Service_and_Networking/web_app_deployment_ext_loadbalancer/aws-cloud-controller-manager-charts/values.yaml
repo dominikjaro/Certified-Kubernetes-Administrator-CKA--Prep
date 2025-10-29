@@ -3,7 +3,7 @@ namespace: "kube-system"
 args:
   - --v=2
   - --cloud-provider=aws
-
+  - --cluster-cidr=10.0.0.0/16
 image:
     repository: registry.k8s.io/provider-aws/cloud-controller-manager
     tag: v1.34.0
