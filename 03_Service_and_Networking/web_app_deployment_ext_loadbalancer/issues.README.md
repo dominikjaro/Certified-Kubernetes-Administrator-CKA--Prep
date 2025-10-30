@@ -49,10 +49,20 @@ The dedicated AWS logic was installed via Helm to handle the LoadBalancer reques
 2. **Deploy the AWS Cloud Controller Manager:** The official Helm chart was used to deploy the CCM to the `kube-system` namespace. This single operation correctly deployed several critical resources:
     - **DaemonSet:** The core controller Pods that execute the AWS API calls.
     - **Service Account, ClusterRole, and Bindings:** These grant the controller Pods the necessary RBAC permissions within Kubernetes.
-3. **Final Prerequisites Check (AWS Side):** The successful deployment relied on the earlier configuration of:
+3.  **Initial CCM log discovery:** The CCM Pod logs indicated a missing argument. The full command arguments needed to include the **VPC CIDR block**.
+4.  **Missing Argument:** `- --cloud-cidr=[MY_VPC_CIDR_BLOCK]` was added to the Helm chart values and the chart was re-deployed to include this argument.
+5. **Final Prerequisites Check (AWS Side):** The successful deployment relied on the earlier configuration of:
     - **IAM Role:** A role with ElasticLoadBalancingFullAccess and AmazonEC2FullAccess was attached to all EC2 instances.
     - **Subnet Tags:** Public subnets were tagged with `kubernetes.io/cluster/kubernetes: owned` and `kubernetes.io/role/elb: 1`.
 
 **External AWS Cloud Controller Manager Helm Chart:** https://github.com/kubernetes/cloud-provider-aws/tree/master/charts/aws-cloud-controller-manager
 
-Once the external CCM Pods were running, the previously pending `Service` object was reconciled, and the **AWS Network Load Balancer** was successfully provisioned.
+Once the CCM Pods were running with the correct `--cloud-cidr` flag, the previously pending Service object was reconciled, and the AWS Network Load Balancer was provisioned, receiving an **external-IP/DNS**.
+
+### Final Adjustment: Manually Register EC2 Instances
+
+Even after the Service received an external address, traffic was not being routed. Upon inspection, the Load Balancer was provisioned, but the **target worker EC2 instances were not automatically registered** in the target group.
+
+**Manual Step:** In the AWS Console, the healthy EC2 worker instances were manually assigned to the Load Balancer's target group.
+
+After this final manual registration, the service was fully functional: ![welcome_to_nginx.png](welcome_to_nginx.png)
