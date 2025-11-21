@@ -75,16 +75,19 @@ resources: {}
 # ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
 priorityClassName: system-cluster-critical
 
-nodeSelector: 
-  node-role.kubernetes.io/control-plane: ""
-
 tolerations:
   - key: "node.kubernetes.io/network-unavailable"
     operator: "Exists"
     effect: "NoSchedule"
 
 # affinity specifies a custom affinity for the controller pods
-affinity: {}
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
 
 # configureDefaultAffinity specifies whether to configure a default affinity for the controller pods to prevent
 # co-location on the same node. This will get ignored if you specify a custom affinity configuration.

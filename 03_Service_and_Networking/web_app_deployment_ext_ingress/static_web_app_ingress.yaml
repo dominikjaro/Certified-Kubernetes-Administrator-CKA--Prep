@@ -7,8 +7,11 @@ metadata:
     k8s-app: static-web-app
     k8s-scope: gke-ws-doit-lab-06
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/load-balancer-name: my-static-web-app-lb
 spec:
+  ingressClassName: alb
   defaultBackend:
     service:
       name: static-web-app-service
