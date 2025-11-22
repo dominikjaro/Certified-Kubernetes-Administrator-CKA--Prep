@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: static-web-app-deployment-v1
+  namespace: doit-lab-07
+  labels:
+    k8s-app: static-web-app-v1
+    k8s-scope: gke-ws-doit-lab-07
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      k8s-app: static-web-app-v1
+  template:
+    metadata:
+      labels:
+        k8s-app: static-web-app-v1
+        k8s-scope: gke-ws-doit-lab-07
+    spec:
+      containers:
+        - name: static-web-app-v1-c
+          image: nginx:alpine
+          ports:
+            - name: http-80
+              containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: v1
+      volumes:
+        - name: html
+          configMap:
+            name: nginx-html
+
+---
+#
+# @info: This is our deployment manifest for "v2"
+# --
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: static-web-app-deployment-v2
+  namespace: doit-lab-07
+  labels:
+    k8s-app: static-web-app-v2
+    k8s-scope: gke-ws-doit-lab-07
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      k8s-app: static-web-app-v2
+  template:
+    metadata:
+      labels:
+        k8s-app: static-web-app-v2
+        k8s-scope: gke-ws-doit-lab-07
+    spec:
+      containers:
+        - name: static-web-app-v2-c
+          image: nginx:alpine
+          ports:
+            - name: http-80
+              containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html/v2/index.html
+              subPath: v2
+      volumes:
+        - name: html
+          configMap:
+            name: nginx-html
+
+---
+#
+# @info: This is our deployment manifest for "v3"
+# --
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: static-web-app-deployment-v3
+  namespace: doit-lab-07
+  labels:
+    k8s-app: static-web-app-v3
+    k8s-scope: gke-ws-doit-lab-07
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      k8s-app: static-web-app-v3
+  template:
+    metadata:
+      labels:
+        k8s-app: static-web-app-v3
+        k8s-scope: gke-ws-doit-lab-07
+    spec:
+      containers:
+        - name: static-web-app-v3-c
+          image: nginx:alpine
+          ports:
+            - name: http-80
+              containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html/v3/index.html
+              subPath: v3
+      volumes:
+        - name: html
+          configMap:
+            name: nginx-html
