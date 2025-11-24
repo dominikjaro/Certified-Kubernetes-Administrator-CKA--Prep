@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-html
+  namespace: doit-lab-07
+  labels:
+    k8s-scope: gke-ws-doit-lab-07
+data:
+  v1: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Welcome to v1 nginx!</title>
+    <style>
+    html { color-scheme: light dark; }
+    body { width: 35em; margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif; }
+    </style>
+    </head>
+    <body>
+    <h1>Welcome to v1 nginx!</h1>
+    <p>This is the v1 nginx deployment</p>
+    </body>
+    </html>
+  v2: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Welcome to v2 nginx!</title>
+    <style>
+    html { color-scheme: light dark; }
+    body { width: 35em; margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif; }
+    </style>
+    </head>
+    <body>
+    <h1>Welcome to v2 nginx!</h1>
+    <p>This is the v2 nginx deployment</p>
+    </body>
+    </html>
+  v3: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Welcome to v3 nginx!</title>
+    <style>
+    html { color-scheme: light dark; }
+    body { width: 35em; margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif; }
+    </style>
+    </head>
+    <body>
+    <h1>Welcome to v3 nginx!</h1>
+    <p>This is the v3 nginx deployment</p>
+    </body>
+    </html>

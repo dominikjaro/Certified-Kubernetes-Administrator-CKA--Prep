@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: static-web-app-ingress-fanout
   namespace: doit-lab-07
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
   labels:
     k8s-app: static-web-app-fanout
     k8s-scope: gke-ws-doit-lab-07

@@ -129,3 +129,15 @@ Meaning: The Load Balancer sent a request, but it hit a firewall.
     * Select Source Security Group: Select your ALB Security Group.
     * Click Save Rules.
     
+---
+
+## 7. The Service was serving the wrong deployment
+
+At the exercise: `web_app_deployment_ext_ingress_fanout`
+
+The ingress was serving the /v2/* AND /v3/* path to the v1 deployment.
+
+To find out I was using `curl -v k8s-doitlab0-staticwe-9a130b281c-1939762810.eu-north-1.elb.amazonaws.com/v2/` and watching the logs for the v1 deployemnt, where I saw the error. 
+
+**Cause:**
+TBC
