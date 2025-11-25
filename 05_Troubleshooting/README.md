@@ -139,5 +139,25 @@ The ingress was serving the /v2/* AND /v3/* path to the v1 deployment.
 
 To find out I was using `curl -v k8s-doitlab0-staticwe-9a130b281c-1939762810.eu-north-1.elb.amazonaws.com/v2/` and watching the logs for the v1 deployemnt, where I saw the error. 
 
+**Issue: Incorrect routing:**
+The Symptom: Requests to http://<alb>/v2/ returned a 404 Not Found.
+
+Investigative Data: Nginx logs on the V1 Pod showed it was receiving the requests meant for V2.
+
+Conclusion: The Load Balancer was misrouting specific traffic (/v2) to the default backend (/).
+
 **Cause:**
-TBC
+The ALB matched the request against the root path (V1) first, routed it to V1, and V1 (correctly) returned 404 because it has no /v2/ directory.
+
+**Solution:**
+I switched from ImplementationSpecific to Prefix and removed the wildcards from the path string.
+
+```yaml
+# ❌ BEFORE (Broken Routing)
+- path: /v2/*
+  pathType: ImplementationSpecific  # AWS treats this as a generic regex/wildcard
+
+# ✅ AFTER (Correct Routing)
+- path: /v2
+  pathType: Prefix  # AWS calculates "Longest Match" automatically
+```
