@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: cka-lab-08-deployment
+  name: cka-lab-08-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cka-lab-08-deployment
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: cka-lab-08-deployment
+    spec:
+      serviceAccountName: cka-lab-sa-08
+      containers:
+      - image: nginx
+        name: nginx
+        resources: {}
+        env:
+        - name: PASS
+          valueFrom:
+            secretKeyRef:
+              name: cka-lab-08-db-creds
+              key: password
+        - name: USER
+          valueFrom:
+            secretKeyRef:
+              name: cka-lab-08-db-creds
+              key: username
+status: {}
