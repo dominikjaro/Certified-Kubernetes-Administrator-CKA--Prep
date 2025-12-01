@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  creationTimestamp: null
+  name: process-data-1
+  namespace: cka-lab-12
+spec:
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      containers:
+      - command: ["/bin/sh", "-c"]
+        args: ["echo 'Hello, the one-shot job is done.'"]
+        image: busybox
+        name: process-data-1
+        resources: {}
+      restartPolicy: Never
+  backoffLimit: 3
+status: {}

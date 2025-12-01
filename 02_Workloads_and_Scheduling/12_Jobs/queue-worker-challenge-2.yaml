@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  creationTimestamp: null
+  name: queue-worker
+  namespace: cka-lab-12
+spec:
+  backoffLimit: 3
+  parallelism: 1
+  completions: 5
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      containers:
+      - command: ["/bin/sh","-c","echo 'Processing item' && sleep 2"]
+        image: busybox
+        name: queue-worker
+        resources: {}
+      restartPolicy: Never
+status: {}
