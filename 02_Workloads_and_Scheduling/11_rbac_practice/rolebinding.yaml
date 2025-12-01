@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: null
+  name: pod-labeler-rolebinding
+  namespace: cka-lab-11
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pod-viewer
+subjects:
+- kind: ServiceAccount
+  name: pod-manager
+  namespace: cka-lab-11
