@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: php-apache
+  name: php-apache
+  namespace: cka-lab-13
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: php-apache
+  type: ClusterIP
+status:
+  loadBalancer: {}
