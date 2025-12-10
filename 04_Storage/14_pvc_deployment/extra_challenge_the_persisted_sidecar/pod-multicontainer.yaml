@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  namespace: cka-lab-14-extra
+  labels:
+    run: logger-pod
+  name: logger-pod
+spec:
+  containers:
+  - image: busybox
+    name: app-writer
+    command: ['sh', '-c', 'while true; do date >> /var/app/logs/access.log; sleep 5; done']
+    volumeMounts:
+    - name: log-vol
+      mountPath: /var/app/logs
+  - image: busybox
+    name: sidecar-reader
+    command: ['sh', '-c', 'tail -f /usr/share/logs/access.log']
+    volumeMounts:
+    - name: log-vol
+      mountPath: /usr/share/logs
+    resources: {}
+  volumes:
+  - name: log-vol
+    persistentVolumeClaim:
+      claimName: sidecar-pvc
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}

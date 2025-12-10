@@ -9,7 +9,7 @@
 ## 🎯 Challenge 1: The Setup
 **Objective:** Prepare the environment.
 
-1.  Create a namespace named **`cka-lab-14`**.
+1.  Create a namespace named **`cka-lab-14-extra`**.
 2.  **Context Check:** Check if your cluster has a default `StorageClass`.
     * *Hint:* `kubectl get sc`.
     * *Note:* If one exists (e.g., `gp2`), you could use dynamic provisioning. For this exercise, assume you **don't** have one and must build it manually.
