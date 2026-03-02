@@ -59,6 +59,8 @@
 
     **What's inside:** `token`, `ca.crt`, and `namespace`.
 
+    e.g. for `curl -k https://kubernetes.default/api/v1/secrets "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"` OR `curl -k https://kubernetes.default/api/v1/namespaces/default/secrets` (to list secrets in the default namespace).
+
 8.  **Logs**
     **System Logs:** `journalctl -u kubelet`
 
